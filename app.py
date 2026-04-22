@@ -57,12 +57,12 @@ class User(UserMixin, db.Model):
             db.session.commit()
         
         if self.plan == 'gratuit':
-            return self.questions_aujourdhui < 5
+            return self.questions_aujourdhui < 15
         return True  # Premium et étudiant = illimité
 
     def questions_restantes(self):
         if self.plan == 'gratuit':
-            return max(0, 5 - self.questions_aujourdhui)
+            return max(0, 15- self.questions_aujourdhui)
         return 999
 
     def abonnement_actif(self):
