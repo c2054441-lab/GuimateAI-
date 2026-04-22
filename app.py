@@ -62,7 +62,7 @@ class User(UserMixin, db.Model):
 
     def questions_restantes(self):
         if self.plan == 'gratuit':
-            return max(0, 15- self.questions_aujourdhui)
+            return max(0, 15 - self.questions_aujourdhui)
         return 999
 
     def abonnement_actif(self):
@@ -155,7 +155,7 @@ def home():
 def chat():
     if not current_user.peut_poser_question():
         return jsonify({
-            "response": "⚠️ Tu as atteint ta limite de 5 questions aujourd'hui.\n\n💎 Passe au plan Premium pour des questions illimitées !\n\n👉 Va dans **Mon Profil** → **S'abonner**"
+            "response": "⚠️ Tu as atteint ta limite de 15 questions aujourd'hui.\n\n💎 Passe au plan Premium pour des questions illimitées !\n\n👉 Va dans **Mon Profil** → **S'abonner**"
         })
 
     data = request.json
