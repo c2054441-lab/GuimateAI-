@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuimateAI 🇬🇳</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a1628; color: white; font-family: Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* HEADER */
+        .header { background: linear-gradient(135deg, #0d2137, #1a3a5c); padding: 10px 15px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #1a7f5a; flex-shrink: 0; }
+        .header-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #1a7f5a, #25b87a); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
+        .header-info h1 { font-size: 17px; font-weight: bold; }
+        .header-info p { font-size: 10px; color: #25b87a; }
+        .header-actions { margin-left: auto; display: flex; gap: 8px; }
+        .btn-header { background: #1a7f5a20; border: 1px solid #1a7f5a40; color: white; padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+
+        /* QUOTA BAR */
+        .quota-bar { background: #0d2137; padding: 6px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ffffff10; flex-shrink: 0; }
+        .quota-text { font-size: 11px; color: #ffffff70; }
+        .quota-text span { color: #25b87a; font-weight: bold; }
+        .btn-premium { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: white; padding: 4px 10px; border-radius: 10px; font-size: 11px; cursor: pointer; }
+
+        /* MATIÈRES */
+        .matiere-bar { background: #0d2137; padding: 8px 12px; display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid #ffffff10; flex-shrink: 0; }
+        .matiere-bar::-webkit-scrollbar { display: none; }
+        .matiere-btn { background: #1a7f5a20; border: 1px solid #1a7f5a40; color: white; padding: 5px 10px; border-radius: 15px; cursor: pointer; white-space: nowrap; font-size: 11px; }
+        .matiere-btn.active { background: #1a7f5a; border-color: #25b87a; }
+
+        /* MESSAGES */
+        .messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .messages::-webkit-scrollbar { width: 3px; }
+        .messages::-webkit-scrollbar-thumb { background: #1a7f5a; border-radius: 3px; }
+        .message { max-width: 88%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.6; }
+        .user-msg { background: linear-gradient(135deg, #1a7f5a, #25b87a); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .ai-msg { background: #0d2137; border: 1px solid #1a7f5a30; align-self: flex-start; border-bottom-left-radius: 4px; white-space: pre-wrap; }
+        .image-preview { max-width: 200px; border-radius: 10px; margin-bottom: 5px; display: block; }
+
+        /* INPUT */
+        .input-area { background: #0d2137; border-top: 1px solid #ffffff10; padding: 10px 12px; flex-shrink: 0; }
+        .input-bar { display: flex; gap: 8px; align-items: center; }
+        .input-bar input { flex: 1; background: #ffffff08; border: 1px solid #ffffff15; color: white; padding: 10px 14px; border-radius: 22px; font-size: 13px; outline: none; }
+        .input-bar input:focus { border-color: #1a7f5a; }
+        .input-bar input::placeholder { color: #ffffff40; }
+        .btn-icon { background: #1a7f5a20; border: 1px solid #1a7f5a40; color: #25b87a; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+        .btn-icon.recording { background: #ff4444; border-color: #ff4444; animation: pulse 1s infinite; }
+        .send-btn { background: linear-gradient(135deg, #1a7f5a, #25b87a); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+
+        /* IMAGE PREVIEW */
+        .img-preview-bar { display: none; background: #0d2137; padding: 6px 12px; border-top: 1px solid #ffffff10; align-items: center; gap: 8px; }
+        .img-prev { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 2px solid #1a7f5a; }
+        .btn-remove { background: #ff4444; border: none; color: white; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 11px; }
+
+        /* TYPING */
+        .typing-indicator { display: flex; gap: 4px; padding: 10px 14px; background: #0d2137; border: 1px solid #1a7f5a30; border-radius: 16px; border-bottom-left-radius: 4px; align-self: flex-start; }
+        .dot { width: 7px; height: 7px; background: #25b87a; border-radius: 50%; animation: bounce 1.2s infinite; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        /* MODALS */
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000000cc; z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-box { background: #0d2137; border: 1px solid #1a7f5a40; border-radius: 20px; padding: 25px; width: 100%; max-width: 380px; max-height: 85vh; overflow-y: auto; }
+        .modal-box h2 { font-size: 18px; margin-bottom: 20px; text-align: center; }
+        .modal-close { float: right; background: none; border: none; color: #ffffff60; font-size: 20px; cursor: pointer; margin-top: -5px; }
+        .field { margin-bottom: 15px; }
+        .field label { display: block; font-size: 11px; color: #ffffff70; margin-bottom: 5px; }
+        .field input, .field textarea, .field select { width: 100%; background: #ffffff08; border: 1px solid #ffffff15; color: white; padding: 10px 12px; border-radius: 10px; font-size: 13px; outline: none; }
+        .field input:focus, .field textarea:focus { border-color: #1a7f5a; }
+        .field input::placeholder, .field textarea::placeholder { color: #ffffff40; }
+        .btn-green { width: 100%; background: linear-gradient(135deg, #1a7f5a, #25b87a); border: none; color: white; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-red { width: 100%; background: #ff444420; border: 1px solid #ff4444; color: #ff4444; padding: 10px; border-radius: 12px; font-size: 13px; cursor: pointer; margin-top: 8px; }
+        .btn-gray { width: 100%; background: #ffffff10; border: 1px solid #ffffff20; color: white; padding: 10px; border-radius: 12px; font-size: 13px; cursor: pointer; margin-top: 8px; }
+        .msg-retour { padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 10px; text-align: center; display: none; }
+        .msg-retour.ok { background: #1a7f5a20; border: 1px solid #1a7f5a; color: #25b87a; }
+        .msg-retour.err { background: #ff444420; border: 1px solid #ff4444; color: #ff4444; }
+
+        /* PROFIL */
+        .photo-profil { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #1a7f5a; margin: 0 auto 15px; display: block; object-fit: cover; cursor: pointer; background: #1a7f5a30; display: flex; align-items: center; justify-content: center; font-size: 35px; }
+        .photo-container { text-align: center; margin-bottom: 20px; }
+        .plan-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .plan-gratuit { background: #ffffff20; color: #ffffff80; }
+        .plan-premium { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .plan-etudiant { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+
+        /* HISTORIQUE */
+        .conv-item { background: #ffffff08; border: 1px solid #ffffff10; border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .conv-item:hover { border-color: #1a7f5a40; }
+        .conv-titre { font-size: 13px; font-weight: bold; }
+        .conv-info { font-size: 10px; color: #ffffff50; margin-top: 3px; }
+        .conv-delete { background: none; border: none; color: #ff4444; cursor: pointer; font-size: 16px; padding: 5px; }
+
+        /* ÉTOILES */
+        .stars { display: flex; gap: 8px; justify-content: center; margin: 15px 0; }
+        .star { font-size: 30px; cursor: pointer; opacity: 0.3; transition: opacity 0.2s; }
+        .star.active { opacity: 1; }
+
+        /* ABONNEMENT */
+        .plan-card { background: #ffffff08; border: 1px solid #ffffff15; border-radius: 15px; padding: 15px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+        .plan-card:hover, .plan-card.selected { border-color: #1a7f5a; background: #1a7f5a10; }
+        .plan-card h3 { font-size: 16px; margin-bottom: 5px; }
+        .plan-card .prix { font-size: 20px; font-weight: bold; color: #25b87a; }
+        .plan-card p { font-size: 11px; color: #ffffff60; margin-top: 5px; }
+
+        /* FOOTER */
+        .footer { text-align: center; padding: 4px; font-size: 9px; color: #ffffff20; flex-shrink: 0; }
+
+        @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-logo" onclick="ouvrirProfil()">
+        <span id="header-photo">🎓</span>
+    </div>
+    <div class="header-info">
+        <h1>GuimateAI 🇬🇳</h1>
+        <p id="header-nom">Chargement...</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn-header" onclick="ouvrirHistorique()">📚 Historique</button>
+        <button class="btn-header" onclick="ouvrirMenu()">☰</button>
+    </div>
+</div>
+
+<!-- QUOTA -->
+<div class="quota-bar">
+    <span class="quota-text">Questions restantes : <span id="quota-count">15</span>/jour</span>
+    <button class="btn-premium" onclick="ouvrirAbonnement()">💎 Premium</button>
+</div>
+
+<!-- MATIÈRES -->
+<div class="matiere-bar">
+    <button class="matiere-btn active" onclick="setMatiere('Général', this)">🎓 Général</button>
+    <button class="matiere-btn" onclick="setMatiere('Mathématiques', this)">📐 Maths</button>
+    <button class="matiere-btn" onclick="setMatiere('Physique-Chimie', this)">⚗️ Physique</button>
+    <button class="matiere-btn" onclick="setMatiere('Sciences de la vie', this)">🌿 SVT</button>
+    <button class="matiere-btn" onclick="setMatiere('Histoire-Géographie', this)">🗺️ Histoire</button>
+    <button class="matiere-btn" onclick="setMatiere('Français', this)">📖 Français</button>
+    <button class="matiere-btn" onclick="setMatiere('Anglais', this)">🇬🇧 Anglais</button>
+    <button class="matiere-btn" onclick="setMatiere('Philosophie', this)">🧠 Philo</button>
+</div>
+
+<!-- MESSAGES -->
+<div class="messages" id="messages">
+    <div class="message ai-msg">👋 Bonjour ! Je suis <strong>GuimateAI</strong> 🇬🇳
+
+Tu peux me poser des questions par :
+📝 Texte — écris ta question
+🎤 Vocal — appuie sur le micro
+📸 Photo — envoie un exercice
+
+Je suis là pour t'aider à réussir ! ✅</div>
+</div>
+
+<!-- PREVIEW IMAGE -->
+<div class="img-preview-bar" id="img-preview-bar">
+    <img class="img-prev" id="img-prev" src="">
+    <button class="btn-remove" onclick="removeImage()">✕</button>
+    <span style="font-size:11px;color:#ffffff60">Image prête</span>
+</div>
+
+<!-- INPUT -->
+<div class="input-area">
+    <div class="input-bar">
+        <button class="btn-icon" onclick="document.getElementById('file-input').click()">📸</button>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleImage(event)">
+        <button class="btn-icon" id="mic-btn" onclick="toggleRecording()">🎤</button>
+        <input type="text" id="input" placeholder="Pose ta question...">
+        <button class="send-btn" onclick="envoyer()">🚀</button>
+    </div>
+</div>
+
+<div class="footer">GuimateAI by Cheick Abdoul Yalany Kebé Mara — GuimateHK 🇬🇳</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- MODAL MENU -->
+<div class="modal" id="modal-menu">
+    <div class="modal-box">
+        <button class="modal-close" onclick="fermerModal('modal-menu')">✕</button>
+        <h2>☰ Menu</h2>
+        <button class="btn-green" onclick="fermerModal('modal-menu'); ouvrirProfil()">👤 Mon Profil</button>
+        <button class="btn-gray" onclick="fermerModal('modal-menu'); ouvrirHistorique()">📚 Historique</button>
+        <button class="btn-gray" onclick="fermerModal('modal-menu'); ouvrirAbonnement()">💎 S'abonner</button>
+        <button class="btn-gray" onclick="fermerModal('modal-menu'); ouvrirNotes()">⭐ Noter l'app</button>
+        <button class="btn-gray" onclick="nouvelleConversation()">➕ Nouvelle conversation</button>
+        <button class="btn-red" onclick="confirmerSuppression()">🗑️ Supprimer l'historique</button>
+        <button class="btn-red" style="margin-top:15px" onclick="deconnexion()">🚪 Se déconnecter</button>
+    </div>
+</div>
+
+<!-- MODAL PROFIL -->
+<div class="modal" id="modal-profil">
+    <div class="modal-box">
+        <button class="modal-close" onclick="fermerModal('modal-profil')">✕</button>
+        <h2>👤 Mon Profil</h2>
+
+        <div class="photo-container">
+            <div class="photo-profil" id="photo-display" onclick="document.getElementById('photo-input').click()">
+                <span id="photo-emoji">👤</span>
+            </div>
+            <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="changerPhoto(event)">
+            <p style="font-size:11px;color:#ffffff50;margin-top:5px">Appuie pour changer la photo</p>
+            <br>
+            <span class="plan-badge plan-gratuit" id="plan-badge">Gratuit</span>
+        </div>
+
+        <div class="field">
+            <label>👤 Nom complet</label>
+            <input type="text" id="profil-nom" placeholder="Ton nom">
+        </div>
+        <div class="field">
+            <label>📱 Téléphone</label>
+            <input type="tel" id="profil-tel" placeholder="+224 6XX XXX XXX">
+        </div>
+        <button class="btn-green" onclick="sauvegarderProfil()">💾 Sauvegarder</button>
+
+        <div style="margin-top:20px; border-top:1px solid #ffffff10; padding-top:15px">
+            <p style="font-size:12px;color:#ffffff60;margin-bottom:10px">🔒 Changer le mot de passe</p>
+            <div class="field">
+                <input type="password" id="ancien-mdp" placeholder="Ancien mot de passe">
+            </div>
+            <div class="field">
+                <input type="password" id="nouveau-mdp" placeholder="Nouveau mot de passe">
+            </div>
+            <button class="btn-gray" onclick="changerMotDePasse()">🔒 Changer</button>
+        </div>
+
+        <div class="msg-retour" id="msg-profil"></div>
+    </div>
+</div>
+
+<!-- MODAL HISTORIQUE -->
+<div class="modal" id="modal-historique">
+    <div class="modal-box">
+        <button class="modal-close" onclick="fermerModal('modal-historique')">✕</button>
+        <h2>📚 Historique</h2>
+        <div id="liste-historique">
+            <p style="text-align:center;color:#ffffff50;font-size:13px">Chargement...</p>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ABONNEMENT -->
+<div class="modal" id="modal-abonnement">
+    <div class="modal-box">
+        <button class="modal-close" onclick="fermerModal('modal-abonnement')">✕</button>
+        <h2>💎 S'abonner</h2>
+
+        <div class="plan-card" onclick="selectPlan('etudiant', this)">
+            <h3>⭐ Plan Étudiant</h3>
+            <div class="prix">5 000 GNF<span style="font-size:12px;color:#ffffff60">/mois</span></div>
+            <p>✅ Questions illimitées<br>✅ Toutes les matières<br>✅ Historique illimité</p>
+        </div>
+
+        <div class="plan-card" onclick="selectPlan('premium', this)">
+            <h3>💎 Plan Premium</h3>
+            <div class="prix">15 000 GNF<span style="font-size:12px;color:#ffffff60">/mois</span></div>
+            <p>✅ Tout du plan Étudiant<br>✅ Photo d'exercices<br>✅ Support prioritaire</p>
+        </div>
+
+        <div class="field" style="margin-top:15px">
+            <label>📱 Ton numéro Orange/MTN</label>
+            <input type="tel" id="tel-paiement" placeholder="+224 6XX XXX XXX">
+        </div>
+
+        <button class="btn-green" onclick="payer()">💳 Payer maintenant</button>
+        <div class="msg-retour" id="msg-abonnement"></div>
+    </div>
+</div>
+
+<!-- MODAL NOTES -->
+<div class="modal" id="modal-notes">
+    <div class="modal-box">
+        <button class="modal-close" onclick="fermerModal('modal-notes')">✕</button>
+        <h2>⭐ Noter GuimateAI</h2>
+        <p style="text-align:center;font-size:13px;color:#ffffff70">Comment trouves-tu l'application ?</p>
+
+        <div class="stars">
+            <span class="star" onclick="setNote(1)">⭐</span>
+            <span class="star" onclick="setNote(2)">⭐</span>
+            <span class="star" onclick="setNote(3)">⭐</span>
+            <span class="star" onclick="setNote(4)">⭐</span>
+            <span class="star" onclick="setNote(5)">⭐</span>
+        </div>
+
+        <div class="field">
+            <label>💬 Commentaire (optionnel)</label>
+            <textarea id="commentaire-note" placeholder="Dis-nous ce que tu penses..." rows="3" style="resize:none"></textarea>
+        </div>
+
+        <button class="btn-green" onclick="soumettrNote()">Envoyer ma note 🚀</button>
+        <div class="msg-retour" id="msg-note"></div>
+    </div>
+</div>
+
+<script>
+// ── VARIABLES GLOBALES
+let matiere = 'Général';
+let historique = [];
+let imageBase64 = null;
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let planSelectionne = null;
+let noteSelectionnee = 0;
+let convId = null;
+let userInfo = {};
+
+// ── INITIALISATION
+window.onload = async () => {
+    await chargerUserInfo();
+    document.getElementById('input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') envoyer();
+    });
+};
+
+async function chargerUserInfo() {
+    try {
+        const r = await fetch('/user-info');
+        userInfo = await r.json();
+        document.getElementById('header-nom').textContent = userInfo.nom || 'Utilisateur';
+        document.getElementById('quota-count').textContent = userInfo.questions_restantes === 999 ? '∞' : userInfo.questions_restantes;
+        document.getElementById('profil-nom').value = userInfo.nom || '';
+        document.getElementById('profil-tel').value = userInfo.telephone || '';
+
+        if (userInfo.photo) {
+            const photoDisplay = document.getElementById('photo-display');
+            photoDisplay.style.backgroundImage = `url(${userInfo.photo})`;
+            photoDisplay.style.backgroundSize = 'cover';
+            document.getElementById('photo-emoji').style.display = 'none';
+            document.getElementById('header-photo').textContent = '';
+        }
+
+        const badge = document.getElementById('plan-badge');
+        if (userInfo.plan === 'premium') {
+            badge.textContent = '💎 Premium';
+            badge.className = 'plan-badge plan-premium';
+        } else if (userInfo.plan === 'etudiant') {
+            badge.textContent = '⭐ Étudiant';
+            badge.className = 'plan-badge plan-etudiant';
+        }
+    } catch(e) { console.error(e); }
+}
+
+// ── MATIÈRE
+function setMatiere(m, btn) {
+    matiere = m;
+    document.querySelectorAll('.matiere-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// ── MESSAGES
+function ajouterMessage(texte, isUser, imgSrc = null) {
+    const div = document.createElement('div');
+    div.className = 'message ' + (isUser ? 'user-msg' : 'ai-msg');
+    if (imgSrc) {
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.className = 'image-preview';
+        div.appendChild(img);
+    }
+    if (texte) {
+        const span = document.createElement('span');
+        span.textContent = texte;
+        div.appendChild(span);
+    }
+    document.getElementById('messages').appendChild(div);
+    document.getElementById('messages').scrollTop = 999999;
+}
+
+function afficherTyping() {
+    const div = document.createElement('div');
+    div.className = 'typing-indicator';
+    div.id = 'typing';
+    div.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    document.getElementById('messages').appendChild(div);
+    document.getElementById('messages').scrollTop = 999999;
+}
+
+// ── ENVOYER MESSAGE
+async function envoyer() {
+    const input = document.getElementById('input');
+    const message = input.value.trim();
+    if (!message && !imageBase64) return;
+
+    input.value = '';
+    const imgSrc = imageBase64 ? document.getElementById('img-prev').src : null;
+    ajouterMessage(message || '📸 Exercice envoyé', true, imgSrc);
+    if (message) historique.push({role: 'user', content: message});
+    removeImage();
+    afficherTyping();
+
+    try {
+        const r = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message, matiere, historique, image: imageBase64, conversation_id: convId })
+        });
+        const data = await r.json();
+        document.getElementById('typing')?.remove();
+        ajouterMessage(data.response, false);
+        historique.push({role: 'assistant', content: data.response});
+        if (historique.length > 20) historique = historique.slice(-20);
+        if (data.conversation_id) convId = data.conversation_id;
+        if (data.questions_restantes !== undefined) {
+            document.getElementById('quota-count').textContent = data.questions_restantes === 999 ? '∞' : data.questions_restantes;
+        }
+        imageBase64 = null;
+    } catch(e) {
+        document.getElementById('typing')?.remove();
+        ajouterMessage('❌ Erreur de connexion !', false);
+    }
+}
+
+// ── NOUVELLE CONVERSATION
+function nouvelleConversation() {
+    convId = null;
+    historique = [];
+    document.getElementById('messages').innerHTML = '';
+    ajouterMessage('✨ Nouvelle conversation ! Pose ta question.', false);
+    fermerModal('modal-menu');
+}
+
+// ── IMAGE
+function handleImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imageBase64 = e.target.result.split(',')[1];
+        document.getElementById('img-prev').src = e.target.result;
+        document.getElementById('img-preview-bar').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeImage() {
+    imageBase64 = null;
+    document.getElementById('img-preview-bar').style.display = 'none';
+    document.getElementById('file-input').value = '';
+}
+
+// ── VOCAL
+async function toggleRecording() {
+    const btn = document.getElementById('mic-btn');
+    if (!isRecording) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = async () => {
+                const blob = new Blob(audioChunks, { type: 'audio/wav' });
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const base64 = e.target.result.split(',')[1];
+                    try {
+                        const r = await fetch('/transcribe', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ audio: base64 })
+                        });
+                        const data = await r.json();
+                        if (data.text) document.getElementById('input').value = data.text;
+                    } catch(err) {}
+                };
+                reader.readAsDataURL(blob);
+                stream.getTracks().forEach(t => t.stop());
+            };
+            mediaRecorder.start();
+            isRecording = true;
+            btn.classList.add('recording');
+            btn.textContent = '⏹️';
+        } catch(e) { alert('Accès micro refusé !'); }
+    } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        btn.classList.remove('recording');
+        btn.textContent = '🎤';
+    }
+}
+
+// ── MODALS
+function ouvrirMenu() { document.getElementById('modal-menu').classList.add('show'); }
+function ouvrirProfil() { document.getElementById('modal-profil').classList.add('show'); fermerModal('modal-menu'); }
+function ouvrirAbonnement() { document.getElementById('modal-abonnement').classList.add('show'); fermerModal('modal-menu'); }
+function ouvrirNotes() { document.getElementById('modal-notes').classList.add('show'); fermerModal('modal-menu'); }
+function fermerModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── HISTORIQUE
+async function ouvrirHistorique() {
+    document.getElementById('modal-historique').classList.add('show');
+    fermerModal('modal-menu');
+    const liste = document.getElementById('liste-historique');
+    liste.innerHTML = '<p style="text-align:center;color:#ffffff50;font-size:13px">Chargement...</p>';
+
+    try {
+        const r = await fetch('/historique');
+        const convs = await r.json();
+
+        if (convs.length === 0) {
+            liste.innerHTML = '<p style="text-align:center;color:#ffffff50;font-size:13px">Aucune conversation</p>';
+            return;
+        }
+
+        liste.innerHTML = '';
+        convs.forEach(conv => {
+            const div = document.createElement('div');
+            div.className = 'conv-item';
+            div.innerHTML = `
+                <div onclick="chargerConversation(${conv.id})">
+                    <div class="conv-titre">${conv.titre}</div>
+                    <div class="conv-info">📚 ${conv.matiere} • ${conv.date} • ${conv.nb_messages} messages</div>
+                </div>
+                <button class="conv-delete" onclick="supprimerConversation(${conv.id})">🗑️</button>
+            `;
+            liste.appendChild(div);
+        });
+    } catch(e) {
+        liste.innerHTML = '<p style="text-align:center;color:#ff4444;font-size:13px">Erreur de chargement</p>';
+    }
+}
+
+async function chargerConversation(id) {
+    fermerModal('modal-historique');
+    try {
+        const r = await fetch(`/conversation/${id}`);
+        const conv = await r.json();
+        convId = conv.id;
+        historique = [];
+        document.getElementById('messages').innerHTML = '';
+        conv.messages.forEach(msg => {
+            ajouterMessage(msg.contenu, msg.role === 'user');
+            historique.push({role: msg.role, content: msg.contenu});
+        });
+    } catch(e) {}
+}
+
+async function supprimerConversation(id) {
+    if (!confirm('Supprimer cette conversation ?')) return;
+    await fetch(`/conversation/${id}/supprimer`, { method: 'POST' });
+    ouvrirHistorique();
+}
+
+async function confirmerSuppression() {
+    if (!confirm('Supprimer tout l\'historique ?')) return;
+    await fetch('/supprimer-historique', { method: 'POST' });
+    fermerModal('modal-menu');
+    alert('Historique supprimé !');
+}
+
+// ── PROFIL
+async function changerPhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const photoData = e.target.result;
+        const photoDisplay = document.getElementById('photo-display');
+        photoDisplay.style.backgroundImage = `url(${photoData})`;
+        photoDisplay.style.backgroundSize = 'cover';
+        document.getElementById('photo-emoji').style.display = 'none';
+
+        await fetch('/profil', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action: 'update_photo', photo: photoData })
+        });
+    };
+    reader.readAsDataURL(file);
+}
+
+async function sauvegarderProfil() {
+    const nom = document.getElementById('profil-nom').value;
+    const telephone = document.getElementById('profil-tel').value;
+    const r = await fetch('/profil', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: 'update_info', nom, telephone })
+    });
+    const data = await r.json();
+    afficherMsg('msg-profil', data.message, data.success);
+    if (data.success) document.getElementById('header-nom').textContent = nom;
+}
+
+async function changerMotDePasse() {
+    const ancien = document.getElementById('ancien-mdp').value;
+    const nouveau = document.getElementById('nouveau-mdp').value;
+    const r = await fetch('/profil', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: 'change_password', ancien_password: ancien, nouveau_password: nouveau })
+    });
+    const data = await r.json();
+    afficherMsg('msg-profil', data.message, data.success);
+}
+
+// ── ABONNEMENT
+function selectPlan(plan, el) {
+    planSelectionne = plan;
+    document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+async function payer() {
+    if (!planSelectionne) {
+        afficherMsg('msg-abonnement', 'Choisis un plan !', false);
+        return;
+    }
+    const telephone = document.getElementById('tel-paiement').value;
+    if (!telephone) {
+        afficherMsg('msg-abonnement', 'Entre ton numéro !', false);
+        return;
+    }
+    const r = await fetch('/abonnement', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ plan: planSelectionne, telephone })
+    });
+    const data = await r.json();
+    afficherMsg('msg-abonnement', data.message, data.success);
+}
+
+// ── NOTES
+function setNote(n) {
+    noteSelectionnee = n;
+    document.querySelectorAll('.star').forEach((s, i) => {
+        s.classList.toggle('active', i < n);
+    });
+}
+
+async function soumettrNote() {
+    if (!noteSelectionnee) {
+        afficherMsg('msg-note', 'Choisis une note !', false);
+        return;
+    }
+    const commentaire = document.getElementById('commentaire-note').value;
+    const r = await fetch('/noter', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ note: noteSelectionnee, commentaire })
+    });
+    const data = await r.json();
+    afficherMsg('msg-note', data.message, data.success);
+}
+
+// ── DÉCONNEXION
+async function deconnexion() {
+    window.location.href = '/deconnexion';
+}
+
+// ── UTILITAIRE
+function afficherMsg(id, texte, success) {
+    const el = document.getElementById(id);
+    el.textContent = texte;
+    el.className = 'msg-retour ' + (success ? 'ok' : 'err');
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+}
+</script>
+
+</body>
+              </html>
